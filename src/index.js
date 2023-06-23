@@ -138,7 +138,7 @@ async function fetchApiRequest() {
     }
 
     if (page * PER_PAGE >= response.totalHits) {
-      checkAvailableData;
+      checkAvailableData();
       return;
     }
 

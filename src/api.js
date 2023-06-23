@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const API_KEY = '37711796-3b567f1c67dcaa6a50c805c9a';
 const BASE_URL = 'https://pixabay.com/api';
-const PER_PAGE = 100;
+const PER_PAGE = 40;
 let page = 1;
 
 export function getPaginationSet() {
