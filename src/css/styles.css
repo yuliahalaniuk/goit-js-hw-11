@@ -30,6 +30,10 @@ a {
   margin: 0 auto;
   max-width: 1030px;
 }
+
+button {
+  cursor: pointer;
+}
 /* ------------------Header--------------  */
 .header {
   width: 100%;
