@@ -1,7 +1,7 @@
 import { fetchQuery, PER_PAGE, resetPage, getPaginationSet } from './api.js';
 
-const bodyEl = document.querySelector('body');
 const formEl = document.querySelector('.search-form');
+const searchBtn = document.querySelector('.search-btn');
 const galleryContainerEl = document.querySelector('.gallery');
 const loadBtnEl = document.querySelector('.load-more-btn');
 
@@ -11,6 +11,7 @@ loadBtnEl.addEventListener('click', fetchApiRequest);
 function onFormSubmit(e) {
   e.preventDefault();
   galleryContainerEl.innerHTML = '';
+
   resetPage();
 
   fetchApiRequest();
@@ -83,21 +84,34 @@ function createContent(imgArray) {
 
 function fetchApiRequest() {
   const searchQuery = formEl.elements.searchQuery.value;
-
+  searchBtn.disabled = true;
   fetchQuery(searchQuery)
     .then(r => {
-      console.log(r);
       if (r.totalHits === 0) {
-        console.log(
-          'Sorry, there are no images matching your search query. Please try again.'
-        );
+        if (document.querySelector('.error-text')) {
+          return;
+        }
+
+        const newText = document.createElement('p');
+        newText.classList.add('error-text');
+        newText.textContent =
+          'Sorry, there are no images matching your search query. Please try again.';
+        searchBtn.disabled = true;
+        loadBtnEl.classList.add('is-hidden');
+
+        galleryContainerEl.after(newText);
+
         return;
       }
 
       const { page, PER_PAGE } = getPaginationSet();
-      console.log(page, PER_PAGE);
+
       if (page * PER_PAGE >= r.totalHits) {
+        if (document.querySelector('.error-text')) {
+          return;
+        }
         const newText = document.createElement('p');
+        newText.classList.add('end-text');
         newText.textContent =
           "We're sorry, but you've reached the end of search results.";
 
@@ -109,5 +123,8 @@ function fetchApiRequest() {
       const imgArr = getNecessaryFields(r);
       return imgArr;
     })
-    .then(createContent);
+    .then(createContent)
+    .finally(() => {
+      searchBtn.disabled = false; // Enable search button after API request completion
+    });
 }
