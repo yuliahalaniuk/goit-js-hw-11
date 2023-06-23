@@ -1,24 +1,27 @@
-import { fetchQuery, PER_PAGE, resetPage, getPaginationSet } from './api.js';
+const API_KEY = '37711796-3b567f1c67dcaa6a50c805c9a';
+const BASE_URL = 'https://pixabay.com/api';
 
-const bodyEl = document.querySelector('body');
 const formEl = document.querySelector('.search-form');
 const galleryContainerEl = document.querySelector('.gallery');
-const loadBtnEl = document.querySelector('.load-more-btn');
+const loadBtnEl = document.querySelector('.load-more');
 
 formEl.addEventListener('submit', onFormSubmit);
-loadBtnEl.addEventListener('click', fetchApiRequest);
+loadBtnEl.addEventListener('click', onLoadBtnClick);
 
 function onFormSubmit(e) {
   e.preventDefault();
   galleryContainerEl.innerHTML = '';
-  resetPage();
 
   fetchApiRequest();
 }
 
-// function onLoadMoreBtnClick(e) {
-//   fetchApiRequest();
-// }
+async function fetchQuery(searchQuery, page) {
+  const promise = await fetch(
+    `${BASE_URL}/?key=${API_KEY}&q=${searchQuery}&image_type=photo&orientation=horizontal&safesearch=true&page=${page}&per_page=4`
+  );
+  page += 1;
+  return promise.json();
+}
 
 function appendMarkup(imgArray) {
   imgArray.map(img => {
@@ -26,15 +29,9 @@ function appendMarkup(imgArray) {
   });
 }
 
-function hideLoadMoreBtn() {
-  loadBtnEl.classList.remove('is-hidden');
-}
-
 function generateMarkup(img) {
   return `<div class="photo-card">
-        <div class="img-wrap">
-          <img src="${img.webformatURL}" alt="" loading="lazy" class="card-img"/>
-        </div>
+        <img src="${img.webformatURL}" alt="" loading="lazy" />
         <div class="info">
           <p class="info-item">
             <b>Likes</b>${img.likes}
@@ -76,12 +73,7 @@ function getNecessaryFields(array) {
   );
 }
 
-function createContent(imgArray) {
-  appendMarkup(imgArray);
-  hideLoadMoreBtn();
-}
-
-function fetchApiRequest() {
+function fetchApiRequest(page) {
   const searchQuery = formEl.elements.searchQuery.value;
 
   fetchQuery(searchQuery)
@@ -91,23 +83,31 @@ function fetchApiRequest() {
         console.log(
           'Sorry, there are no images matching your search query. Please try again.'
         );
-        return;
-      }
-
-      const { page, PER_PAGE } = getPaginationSet();
-      console.log(page, PER_PAGE);
-      if (page * PER_PAGE >= r.totalHits) {
-        const newText = document.createElement('p');
-        newText.textContent =
-          "We're sorry, but you've reached the end of search results.";
-
-        loadBtnEl.classList.add('is-hidden');
-        galleryContainerEl.after(newText);
-        return;
       }
 
       const imgArr = getNecessaryFields(r);
+      console.log(imgArr);
+
       return imgArr;
     })
-    .then(createContent);
+    .then(appendMarkup)
+    .then(() => {
+      const per_page = 4;
+      if (page * per_page >= r.totalHits) {
+        console.log(
+          "We're sorry, but you've reached the end of search results."
+        );
+      }
+    });
+}
+
+function onLoadBtnClick(e) {
+  fetchApiRequest();
+}
+
+// additional check
+if (page * per_page >= r.totalHits) {
+  console.log(
+    '"We are sorry, but you have reached the end of search results."'
+  );
 }
