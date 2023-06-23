@@ -15,6 +15,11 @@ p {
   margin: 0;
 }
 
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
 .load-more-btn.is-hidden {
   display: none;
 }

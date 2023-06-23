@@ -1,9 +1,16 @@
 import { fetchQuery, PER_PAGE, resetPage, getPaginationSet } from './api.js';
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
+import SimpleLightbox from 'simplelightbox';
+import 'simplelightbox/dist/simple-lightbox.min.css';
 
 const formEl = document.querySelector('.search-form');
 const searchBtn = document.querySelector('.search-btn');
 const galleryContainerEl = document.querySelector('.gallery');
 const loadBtnEl = document.querySelector('.load-more-btn');
+
+const lightboxGallery = new SimpleLightbox('.gallery a', {
+  captionDelay: 250,
+});
 
 formEl.addEventListener('submit', onFormSubmit);
 loadBtnEl.addEventListener('click', fetchApiRequest);
@@ -11,20 +18,21 @@ loadBtnEl.addEventListener('click', fetchApiRequest);
 function onFormSubmit(e) {
   e.preventDefault();
   galleryContainerEl.innerHTML = '';
-
   resetPage();
 
   fetchApiRequest();
-}
 
-// function onLoadMoreBtnClick(e) {
-//   fetchApiRequest();
-// }
+  if (document.querySelector('.error-text')) {
+    document.querySelector('.error-text').remove();
+  }
+}
 
 function appendMarkup(imgArray) {
   imgArray.map(img => {
     galleryContainerEl.insertAdjacentHTML('beforeEnd', generateMarkup(img));
   });
+
+  lightboxGallery.refresh();
 }
 
 function hideLoadMoreBtn() {
@@ -32,9 +40,10 @@ function hideLoadMoreBtn() {
 }
 
 function generateMarkup(img) {
-  return `<div class="photo-card">
+  return ` <a href="${img.largeImageURL}">
+  <div class="photo-card">
         <div class="img-wrap">
-          <img src="${img.webformatURL}" alt="" loading="lazy" class="card-img"/>
+         <img src="${img.webformatURL}" alt="${img.tags}" loading="lazy" class="card-img"/>
         </div>
         <div class="info">
           <p class="info-item">
@@ -50,7 +59,8 @@ function generateMarkup(img) {
             <b>Downloads</b>${img.downloads}
           </p>
         </div>
-      </div>`;
+      </div>
+      </a>`;
 }
 
 function getNecessaryFields(array) {
@@ -82,49 +92,61 @@ function createContent(imgArray) {
   hideLoadMoreBtn();
 }
 
-function fetchApiRequest() {
+function checkSearchQuery() {
+  if (document.querySelector('.error-text')) {
+    return;
+  }
+
+  const newText = document.createElement('p');
+  newText.classList.add('error-text');
+  newText.textContent =
+    'Sorry, there are no images matching your search query. Please try again.';
+  searchBtn.disabled = true;
+  loadBtnEl.classList.add('is-hidden');
+
+  galleryContainerEl.after(newText);
+}
+
+function checkAvailableData() {
+  if (document.querySelector('.error-text')) {
+    return;
+  }
+  const newText = document.createElement('p');
+  newText.classList.add('end-text');
+  newText.textContent =
+    "We're sorry, but you've reached the end of search results.";
+
+  loadBtnEl.classList.add('is-hidden');
+  galleryContainerEl.after(newText);
+}
+
+async function fetchApiRequest() {
   const searchQuery = formEl.elements.searchQuery.value;
   searchBtn.disabled = true;
-  fetchQuery(searchQuery)
-    .then(r => {
-      if (r.totalHits === 0) {
-        if (document.querySelector('.error-text')) {
-          return;
-        }
 
-        const newText = document.createElement('p');
-        newText.classList.add('error-text');
-        newText.textContent =
-          'Sorry, there are no images matching your search query. Please try again.';
-        searchBtn.disabled = true;
-        loadBtnEl.classList.add('is-hidden');
+  try {
+    const response = await fetchQuery(searchQuery);
+    if (response.totalHits === 0) {
+      checkSearchQuery();
+      return;
+    }
 
-        galleryContainerEl.after(newText);
+    const { page, PER_PAGE } = getPaginationSet();
 
-        return;
-      }
+    if (page === 1) {
+      Notify.success(`Hooray! We found ${response.totalHits} images.`);
+    }
 
-      const { page, PER_PAGE } = getPaginationSet();
+    if (page * PER_PAGE >= response.totalHits) {
+      checkAvailableData;
+      return;
+    }
 
-      if (page * PER_PAGE >= r.totalHits) {
-        if (document.querySelector('.error-text')) {
-          return;
-        }
-        const newText = document.createElement('p');
-        newText.classList.add('end-text');
-        newText.textContent =
-          "We're sorry, but you've reached the end of search results.";
-
-        loadBtnEl.classList.add('is-hidden');
-        galleryContainerEl.after(newText);
-        return;
-      }
-
-      const imgArr = getNecessaryFields(r);
-      return imgArr;
-    })
-    .then(createContent)
-    .finally(() => {
-      searchBtn.disabled = false; // Enable search button after API request completion
-    });
+    const imgArr = getNecessaryFields(response);
+    createContent(imgArr);
+  } catch (error) {
+    console.error(error);
+  } finally {
+    searchBtn.disabled = false;
+  }
 }

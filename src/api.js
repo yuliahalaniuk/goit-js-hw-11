@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 const API_KEY = '37711796-3b567f1c67dcaa6a50c805c9a';
 const BASE_URL = 'https://pixabay.com/api';
 const PER_PAGE = 100;
@@ -8,12 +10,12 @@ export function getPaginationSet() {
 }
 
 export async function fetchQuery(searchQuery) {
-  const promise = await fetch(
+  const promise = await axios.get(
     `${BASE_URL}/?key=${API_KEY}&q=${searchQuery}&image_type=photo&orientation=horizontal&safesearch=true&page=${page}&per_page=${PER_PAGE}`
-  ).then(r => r.json());
+  );
 
   page += 1;
-  return promise;
+  return promise.data;
 }
 
 export function resetPage() {
