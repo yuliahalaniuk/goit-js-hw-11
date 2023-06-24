@@ -25,6 +25,10 @@ function onFormSubmit(e) {
   if (document.querySelector('.error-text')) {
     document.querySelector('.error-text').remove();
   }
+
+  if (document.querySelector('.end-text')) {
+    document.querySelector('.end-text').remove();
+  }
 }
 
 function appendMarkup(imgArray) {
@@ -122,6 +126,11 @@ function checkAvailableData() {
 
 async function fetchApiRequest() {
   const searchQuery = formEl.elements.searchQuery.value;
+
+  if (searchQuery === '' || searchQuery === ' ') {
+    return;
+  }
+
   searchBtn.disabled = true;
 
   try {
@@ -137,13 +146,13 @@ async function fetchApiRequest() {
       Notify.success(`Hooray! We found ${response.totalHits} images.`);
     }
 
+    const imgArr = getNecessaryFields(response);
+    createContent(imgArr);
+
     if (page * PER_PAGE >= response.totalHits) {
       checkAvailableData();
       return;
     }
-
-    const imgArr = getNecessaryFields(response);
-    createContent(imgArr);
   } catch (error) {
     console.error(error);
   } finally {
