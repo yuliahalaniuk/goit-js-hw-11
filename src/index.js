@@ -125,9 +125,9 @@ function checkAvailableData() {
 }
 
 async function fetchApiRequest() {
-  const searchQuery = formEl.elements.searchQuery.value;
+  const searchQuery = formEl.elements.searchQuery.value.trim();
 
-  if (searchQuery === '' || searchQuery === ' ') {
+  if (searchQuery === '') {
     return;
   }
 
