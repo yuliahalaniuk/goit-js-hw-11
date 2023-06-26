@@ -21,3 +21,5 @@ export async function fetchQuery(searchQuery) {
 export function resetPage() {
   page = 1;
 }
+
+// Hello from test branch
